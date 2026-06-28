@@ -40,7 +40,7 @@ async function verifyAdminAuthorization() {
 
     if (error || !user) {
         // If no active session, boot them back to the auth page
-        window.location.href = 'auth.html';
+        window.location.href = 'index.html';
         return;
     }
 

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Student Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="app-shell">
+
+        <!-- Header Zone (Greeting resides here directly now) -->
+        <header>
+            <div class="header-greeting-zone">
+                <h1 id="dynamic-greeting">Good evening, Haron!</h1>
+                <p>Welcome back to your learning space. Pick up right where you left your milestones.</p>
+            </div>
+
+            <div class="user-profile-menu">
+                <div style="text-align: right; font-size: 0.85rem;">
+                    <p style="font-weight: 600; color: var(--dark);" id="profile-name-text">Haron</p>
+                    <p style="color: var(--text-muted);" id="profile-role-text">Computer Science - Year 2</p>
+                </div>
+                <div class="avatar-circle" id="profile-avatar">HA</div>
+            </div>
+        </header>
+
+        <!-- Sidebar Navigation Tree -->
+        <aside>
+            <nav class="nav-links-group">
+                <div class="nav-item active" data-target="dashboard" ">
+                    <span class=" nav-icon">📊</span>
+                    <span>Dashboard Home</span>
+                </div>
+                <div class="nav-item" data-target="catalog" onclick="loadPage('courses.html')">
+                    <span class="nav-icon">📖</span>
+                    <span>Browse Courses</span>
+                </div>
+                <div class="nav-item" data-target="my-courses">
+                    <span class="nav-icon">🎓</span>
+                    <span>My Enrollments</span>
+                </div>
+
+                <!-- ADMIN ONLY LINK: Hidden by default -->
+                <div class="nav-item" id="admin-add-course" data-target="add-course" onclick="loadPage('admin.html')"
+                    style="display: none;">
+                    <span class="nav-icon">➕</span>
+                    <span>Add New Course</span>
+                </div>
+
+                <div class="nav-item" data-target="settings" ">
+                    <span class=" nav-icon">⚙️</span>
+                    <span>Profile Settings</span>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn-logout"><a href="index.html">Sign Out</a></button>
+            </div>
+        </aside>
+
+        <!-- Main Dynamic View Area -->
+        <main class="main-content" id="main-content">
+        </main>
+    </div>
+    <!-- In index.html -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script>
+        // Initialize client globally so dashboard.js can see it
+        const SUPABASE_URL = "https://krxjblifzfburywvgeqt.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_0vU20Yh9apToYxeUdV0nXQ_JvwWTEt1";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    </script>
+    <script src="script.js"></script>
+</body>
+
+</html>

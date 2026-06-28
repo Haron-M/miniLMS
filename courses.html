@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>courses</title>
+</head>
+<style>
+    /* Catalog Frame Configurations */
+    .catalog-workspace {
+        margin-top: -12px;
+        padding: 1rem;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    .course-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-top: 1.5rem;
+    }
+
+    /* Individual Glass-Card Structural Layout */
+    .course-card-node {
+        /* Uses identical premium deep midnight navy base from top bar with smooth transparency */
+        background: rgba(2, 14, 46, 0.85);
+        backdrop-filter: blur(16px) saturate(130%);
+        -webkit-backdrop-filter: blur(16px) saturate(130%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 1rem;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+    }
+
+    .course-card-node:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 15px 35px rgba(245, 195, 64, 0.15);
+        /* Soft gold glow highlight */
+        border-color: rgba(245, 195, 64, 0.3);
+    }
+
+    /* Header Image Container */
+    .card-image-canvas {
+        height: 155px;
+        width: 100%;
+        position: relative;
+        background: linear-gradient(135deg, #020e2e 0%, #1e293b 100%);
+        overflow: hidden;
+    }
+
+    .card-image-canvas img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.85;
+        transition: transform 0.5s ease;
+    }
+
+    .course-card-node:hover .card-image-canvas img {
+        transform: scale(1.05);
+    }
+
+    /* Level Badge Indicator Overlay */
+    .card-academic-badge {
+        position: absolute;
+        top: 0.85rem;
+        right: 0.85rem;
+        background: rgba(245, 195, 64, 0.95);
+        /* Golden yellow accent matching sidebar */
+        color: #020e2e;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.25rem 0.65rem;
+        border-radius: 0.35rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Card Information Block */
+    .card-details-context {
+        padding: 1.35rem;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        gap: 0.5rem;
+    }
+
+    .card-course-code {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #f5c340;
+        /* Coordinates perfectly with the sidebar gold */
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .card-course-title {
+        color: #ffffff;
+        font-size: 1.2rem;
+        font-weight: 700;
+        line-height: 1.35;
+        margin: 0.15rem 0;
+    }
+
+    .card-lecturer-row {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        color: #94a3b8;
+        font-size: 0.9rem;
+        margin-top: auto;
+        padding-top: 0.75rem;
+    }
+
+    /* Action Footer Enrollment Control Button */
+    .card-action-bar {
+        padding: 0 1.35rem 1.35rem 1.35rem;
+    }
+
+    .btn-card-enroll {
+        width: 100%;
+        padding: 0.85rem;
+        background: #f5c340;
+        /* Matches portal layout theme primary shade */
+        color: #020e2e;
+        font-weight: 750;
+        font-size: 0.95rem;
+        border: none;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-card-enroll:hover {
+        background: #ffffff;
+        color: #020e2e;
+        box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+    }
+
+    /* Auxiliary loader style text formatting */
+    .catalog-loader {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 4rem;
+        color: #94a3b8;
+        font-size: 1.05rem;
+    }
+
+    /* Catalog Search Box Layout */
+    .catalog-search-container {
+
+        position: relative;
+        max-width: 520px;
+        margin: 2rem auto 0 auto;
+        margin-top: 12px;
+        margin-bottom: 10px;
+        /* Centers the container perfectly using auto margins */
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .search-input-icon {
+        position: absolute;
+        left: 1.25rem;
+        pointer-events: none;
+        font-size: 1.1rem;
+        opacity: 0.7;
+    }
+
+    #catalog-search-bar {
+        width: 100%;
+        padding: 0.6rem 1.1rem 0.6rem 3.2rem;
+        background: rgba(2, 14, 46, 0.06);
+        /* Subtle depth overlay against clean panel */
+        border: 1px solid rgba(2, 14, 46, 0.2);
+        border-radius: 0.65rem;
+        color: #020e2e;
+        /* Dark navy text to contrast cleanly against a light background */
+        font-size: 1rem;
+        font-weight: 500;
+        transition: all 0.25s ease;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #catalog-search-bar::placeholder {
+        color: rgba(2, 14, 46, 0.45);
+    }
+
+    #catalog-search-bar:focus {
+        outline: none;
+        border-color: #f5c340;
+        /* Golden focus line matching your layout themes */
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(245, 195, 64, 0.15);
+    }
+</style>
+
+<body>
+    <!-- BROWSE CATALOG VIEW CONTAINER -->
+    <div class="catalog-workspace">
+        <div class="panel-header-block">
+            <h2 class="panel-title-text">📖 Institutional Course Catalog</h2>
+            <p class="panel-subtitle-text">Explore available training tracks and instantly sync your learning syllabus.
+            </p>
+        </div>
+        <div class="catalog-search-container">
+            <span class="search-input-icon">🔍</span>
+            <input type="text" id="catalog-search-bar" placeholder="Search by course code, title, or lecturer..."
+                oninput="filterLoadedCourses(this.value)">
+        </div>
+
+        <!-- The dynamic card collection mounts into this wrapper element -->
+        <div id="course-grid-mount" class="course-cards-grid">
+            <!-- Loader Skeleton Indicator while database responds -->
+            <div class="catalog-loader">Synchronizing active curriculum matrices...</div>
+        </div>
+    </div>
+    <script src="superbaseConfig.js"></script>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

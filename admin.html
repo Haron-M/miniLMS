@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>admin</title>
+    <link rel="stylesheet" href="style.css" />
     <style>
         /* Color Harmonized Admin Panel Container */
         .glass-view-pane {
@@ -244,20 +245,29 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="superbaseConfig.js"></script>
+    <script src="script.js"></script>
     <script>
         // Append into your dashboard.js file
 
         async function handleCourseProvisioning(event) {
             event.preventDefault();
 
-            // 1. Collect form entries from values
-            const courseCode = document.getElementById('course-code-input').value.trim();
-            const courseName = document.getElementById('course-name-input').value.trim();
-            const lecturer = document.getElementById('course-lecturer-input').value.trim();
-            const yearTaught = document.getElementById('course-year-input').value;
+            const codeInput = document.getElementById('course-code-input');
+            const nameInput = document.getElementById('course-name-input');
+            const lecturerInput = document.getElementById('course-lecturer-input');
+            const yearSelect = document.getElementById('course-year-input');
+
+            if (!codeInput || !nameInput || !lecturerInput || !yearSelect) {
+                showPopupNotification("Form inputs could not be found in the current page view.", 'error');
+                return;
+            }
+
+            const courseCode = codeInput.value.trim();
+            const courseName = nameInput.value.trim();
+            const lecturer = lecturerInput.value.trim();
+            const yearTaught = yearSelect.value;
 
             try {
-                // 2. Perform Insert transaction to Supabase using the authenticated client global reference instance
                 const { data, error } = await _supabase
                     .from('courses')
                     .insert([
@@ -269,17 +279,26 @@
                         }
                     ]);
 
-                if (error) throw error;
+                if (error) {
+                    if (error.code === '23505') {
+                        throw new Error(`The course code "${courseCode}" already exists in the system!`);
+                    }
+                    throw error;
+                }
 
-                // 3. Status Notification Feedback Alert Success Loop 
-                alert(`🚀 Complete: "${courseCode} - ${courseName}" is successfully registered to the portal!`);
+                // SWAPPED: Using modern on-screen success popup custom notification
+                showPopupNotification(`"${courseCode} - ${courseName}" has been successfully deployed!`, 'success');
 
-                // Clear layout state input fields cleanly
                 document.getElementById('admin-course-form').reset();
+
+                if (typeof allCoursesCache !== 'undefined') {
+                    allCoursesCache = [];
+                }
 
             } catch (error) {
                 console.error("Database Write Fail Context:", error);
-                alert(`❌ Database Insertion Blocked: ${error.message}`);
+                // SWAPPED: Using modern on-screen error popup custom notification
+                showPopupNotification(error.message, 'error');
             }
         }
     </script>

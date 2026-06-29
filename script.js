@@ -243,4 +243,58 @@ function renderCatalogCards(courseArray) {
         gridContainer.insertAdjacentHTML('beforeend', cardNodeMarkup);
     });
 }
+// Universal Custom UI Toast Popup Notification Engine
+function showPopupNotification(message, type = 'success') {
+    // 1. Setup the master structural wrapper if it doesn't exist in the current layout context
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
 
+    // 2. Build the message card instance elements
+    const toast = document.createElement('div');
+    toast.className = `toast-card ${type}`;
+
+    const icon = type === 'success' ? '🚀' : '❌';
+    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+
+    // 3. Mount item into our container viewport
+    container.appendChild(toast);
+
+    // 4. Smooth teardown lifecycle loop after 4.5 seconds
+    setTimeout(() => {
+        toast.classList.add('fade-out');
+        toast.addEventListener('transitionend', () => {
+            toast.remove();
+        });
+    }, 4500);
+}// Universal Custom UI Toast Popup Notification Engine
+function showPopupNotification(message, type = 'success') {
+    // 1. Setup the master structural wrapper if it doesn't exist in the current layout context
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    // 2. Build the message card instance elements
+    const toast = document.createElement('div');
+    toast.className = `toast-card ${type}`;
+
+    const icon = type === 'success' ? '🚀' : '❌';
+    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+
+    // 3. Mount item into our container viewport
+    container.appendChild(toast);
+
+    // 4. Smooth teardown lifecycle loop after 4.5 seconds
+    setTimeout(() => {
+        toast.classList.add('fade-out');
+        toast.addEventListener('transitionend', () => {
+            toast.remove();
+        });
+    }, 4500);
+}

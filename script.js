@@ -13,6 +13,12 @@ async function loadPage(page) {
         if (mainContent) {
             mainContent.innerHTML = data;
         }
+        else if (page === 'courses.html') {
+            synchronizePortalCatalog();
+        }
+        else if (page === 'enrollment.html') {
+            synchronizeMyEnrollments(); // Triggers the fresh list pull immediately
+        }
     } catch (error) {
         console.error("Error loading the page:", error);
     }
@@ -141,9 +147,123 @@ async function synchronizePortalCatalog() {
     }
 }
 
-// 3. Simple Alert Handler for standard button action trigger
-function executeStudentEnrollment(courseId, courseCode) {
-    alert(`🎯 Synchronizing Connection Request!\nYou are requesting enrollment parameters for Course: ${courseCode}.\n(Wiring up enrollment mapping next!)`);
+// 1. Updated Enrollment Action: Saves the connection directly to Supabase
+async function executeStudentEnrollment(courseId, courseCode) {
+    try {
+        // Automatically reads the logged-in user's token profile data via RLS
+        const { data, error } = await _supabase
+            .from('enrollments')
+            .insert([
+                { course_id: courseId }
+            ]);
+
+        if (error) {
+            // Catch duplicate entry error strings cleanly
+            if (error.code === '23505') {
+                throw new Error(`You are already enrolled in course module: ${courseCode}`);
+            }
+            throw error;
+        }
+
+        // Show a beautiful, screen-centered popup success notification
+        showPopupNotification(`Successfully enrolled in ${courseCode}! Added to your syllabus.`, 'success');
+
+    } catch (err) {
+        console.error("Enrollment pipeline block:", err);
+        showPopupNotification(err.message, 'error');
+    }
+}
+
+// 2. Synchronization Engine: Fetches and displays only YOUR enrolled courses
+async function synchronizeMyEnrollments() {
+    const gridContainer = document.getElementById('my-enrollments-grid');
+    if (!gridContainer) return;
+
+    try {
+        // Query the enrollments table and join it with the courses details table
+        const { data: records, error } = await _supabase
+            .from('enrollments')
+            .select(`
+                id,
+                courses (
+                    id,
+                    course_code,
+                    course_name,
+                    lecturer,
+                    year_taught
+                )
+            `);
+
+        if (error) throw error;
+
+        if (!records || records.length === 0) {
+            gridContainer.innerHTML = `
+                <div class="catalog-loader">
+                    <h3>🎓 No active enrollments found</h3>
+                    <p>Head over to "Browse Courses" to populate your semester track!</p>
+                </div>`;
+            return;
+        }
+
+        gridContainer.innerHTML = ''; // Clear loading screen text
+
+        // Render each linked course module card item
+        records.forEach(item => {
+            const course = item.courses;
+            if (!course) return; // Guard against broken relational dependencies
+
+            const structuralImageCover = `https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80&sig=${course.course_code}`;
+
+            const cardNodeMarkup = `
+                <div class="course-card-node">
+                    <div class="card-image-canvas">
+                        <span class="card-academic-badge">${course.year_taught || 'Core'}</span>
+                        <img src="${structuralImageCover}" alt="${course.course_name} Graphic Overview">
+                    </div>
+                    
+                    <div class="card-details-context">
+                        <span class="card-course-code">🆔 ${course.course_code}</span>
+                        <h3 class="card-course-title">${course.course_name}</h3>
+                        
+                        <div class="card-lecturer-row">
+                            <span>👨‍🏫</span>
+                            <span>${course.lecturer}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-action-bar">
+                        <button class="btn-card-enroll" style="background:#ff4d4d; color:#ffffff;" onclick="cancelEnrollment('${item.id}')">
+                            ❌ Drop Course
+                        </button>
+                    </div>
+                </div>
+            `;
+            gridContainer.insertAdjacentHTML('beforeend', cardNodeMarkup);
+        });
+
+    } catch (err) {
+        console.error("My Enrollments sync error:", err);
+        gridContainer.innerHTML = `<div class="catalog-loader" style="color:#ff6b6b;">⚠️ Sync Error: ${err.message}</div>`;
+    }
+}
+
+// Optional: Allows a student to drop a course from their dashboard page
+async function cancelEnrollment(enrollmentId) {
+    if (!confirm("Are you sure you want to drop this course module?")) return;
+
+    try {
+        const { error } = await _supabase
+            .from('enrollments')
+            .delete()
+            .eq('id', enrollmentId);
+
+        if (error) throw error;
+
+        showPopupNotification("Course successfully dropped.", 'success');
+        synchronizeMyEnrollments(); // Re-render the grid instantly
+    } catch (err) {
+        showPopupNotification(err.message, 'error');
+    }
 }
 
 // 4. Update your main loadPage caller architecture to run this trigger when catalog arrives

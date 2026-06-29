@@ -26,7 +26,7 @@ async function loadPage(page) {
 
 // 2. Automatically load the dashboard tab when the user first opens the page
 document.addEventListener('DOMContentLoaded', () => {
-    loadPage('admin.html');
+    loadPage('main.html');
 });
 
 
@@ -81,106 +81,12 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('dynamic-greeting').innerText = `${greetingStr}, ${userProfile.name}!`;
 });
 // Append directly inside your dashboard.js file
-
-// 1. Core Data Retrieval Wrapper Engine
-async function synchronizePortalCatalog() {
-    const gridContainer = document.getElementById('course-grid-mount');
-    if (!gridContainer) return; // Halt instantly if catalog view is not in current viewport DOM
-
-    try {
-        // Fetch courses securely sorted alphabetically by course code
-        const { data: records, error } = await _supabase
-            .from('courses')
-            .select('*')
-            .order('course_code', { ascending: true });
-
-        if (error) throw error;
-
-        // Visual handling if table rows return empty
-        if (!records || records.length === 0) {
-            gridContainer.innerHTML = `
-                <div class="catalog-loader">
-                    <h3>📚 No modules provisioned yet</h3>
-                    <p>Academic registrar lists are currently blank. Check back later.</p>
-                </div>`;
-            return;
-        }
-
-        // 2. Map values into structural glass nodes loop execution
-        gridContainer.innerHTML = ''; // Wipe out baseline loading indicators
-
-        records.forEach(module => {
-            // Pick crisp, unique tech project covers dynamically using course titles
-            const encodedTitle = encodeURIComponent(module.course_name + " software code tech");
-            const structuralImageCover = `https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80&sig=${module.course_code}`;
-
-            const cardNodeMarkup = `
-                <div class="course-card-node">
-                    <div class="card-image-canvas">
-                        <span class="card-academic-badge">${module.year_taught || 'Core'}</span>
-                        <img src="${structuralImageCover}" alt="${module.course_name} Graphic Overview Cover" onerror="this.src='https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?q=80&w=600&auto=format&fit=crop'">
-                    </div>
-                    
-                    <div class="card-details-context">
-                        <span class="card-course-code">🆔 ${module.course_code}</span>
-                        <h3 class="card-course-title">${module.course_name}</h3>
-                        
-                        <div class="card-lecturer-row">
-                            <span>👨‍🏫</span>
-                            <span>${module.lecturer}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="card-action-bar">
-                        <button class="btn-card-enroll" onclick="executeStudentEnrollment('${module.id}', '${module.course_code}')">
-                            <span>⚡</span> Fast Enroll
-                        </button>
-                    </div>
-                </div>
-            `;
-            gridContainer.insertAdjacentHTML('beforeend', cardNodeMarkup);
-        });
-
-    } catch (err) {
-        console.error("Catalog Pipeline Broken Exception Context:", err);
-        gridContainer.innerHTML = `<div class="catalog-loader" style="color:#ff6b6b;">⚠️ System failed to pull database entries: ${err.message}</div>`;
-    }
-}
-
-// 1. Updated Enrollment Action: Saves the connection directly to Supabase
-async function executeStudentEnrollment(courseId, courseCode) {
-    try {
-        // Automatically reads the logged-in user's token profile data via RLS
-        const { data, error } = await _supabase
-            .from('enrollments')
-            .insert([
-                { course_id: courseId }
-            ]);
-
-        if (error) {
-            // Catch duplicate entry error strings cleanly
-            if (error.code === '23505') {
-                throw new Error(`You are already enrolled in course module: ${courseCode}`);
-            }
-            throw error;
-        }
-
-        // Show a beautiful, screen-centered popup success notification
-        showPopupNotification(`Successfully enrolled in ${courseCode}! Added to your syllabus.`, 'success');
-
-    } catch (err) {
-        console.error("Enrollment pipeline block:", err);
-        showPopupNotification(err.message, 'error');
-    }
-}
-
-// 2. Synchronization Engine: Fetches and displays only YOUR enrolled courses
 async function synchronizeMyEnrollments() {
     const gridContainer = document.getElementById('my-enrollments-grid');
     if (!gridContainer) return;
 
     try {
-        // Query the enrollments table and join it with the courses details table
+        // 1. Fetch data from enrollments and try to pull the linked course data
         const { data: records, error } = await _supabase
             .from('enrollments')
             .select(`
@@ -196,6 +102,10 @@ async function synchronizeMyEnrollments() {
 
         if (error) throw error;
 
+        // Debugging: This prints the exact structure to your console so you can see it
+        console.log("Supabase Enrollments Payload:", records);
+
+        // 2. Check if the user has any enrollments
         if (!records || records.length === 0) {
             gridContainer.innerHTML = `
                 <div class="catalog-loader">
@@ -205,12 +115,17 @@ async function synchronizeMyEnrollments() {
             return;
         }
 
-        gridContainer.innerHTML = ''; // Clear loading screen text
+        gridContainer.innerHTML = ''; // Wipe out the frozen loading text
 
-        // Render each linked course module card item
+        // 3. Loop through your records with safety checks
         records.forEach(item => {
-            const course = item.courses;
-            if (!course) return; // Guard against broken relational dependencies
+            // SAFETY FALLBACK: Handles both singular 'course' or plural 'courses' matching shapes
+            const course = item.courses || item.course;
+
+            if (!course) {
+                console.warn("Found an enrollment record, but it has no matching course data linked to it:", item);
+                return; // Skip this item safely if data mapping is loose
+            }
 
             const structuralImageCover = `https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80&sig=${course.course_code}`;
 
@@ -218,7 +133,7 @@ async function synchronizeMyEnrollments() {
                 <div class="course-card-node">
                     <div class="card-image-canvas">
                         <span class="card-academic-badge">${course.year_taught || 'Core'}</span>
-                        <img src="${structuralImageCover}" alt="${course.course_name} Graphic Overview">
+                        <img src="${structuralImageCover}" alt="${course.course_name} Cover">
                     </div>
                     
                     <div class="card-details-context">
@@ -241,9 +156,23 @@ async function synchronizeMyEnrollments() {
             gridContainer.insertAdjacentHTML('beforeend', cardNodeMarkup);
         });
 
+        // Final safety: If records existed but all failed the relationship check
+        if (gridContainer.innerHTML === '') {
+            gridContainer.innerHTML = `
+                <div class="catalog-loader">
+                    <h3>⚠️ Relationship Mapping Issue</h3>
+                    <p>The system found your enrollment rows but couldn't map them to the courses table items. Check your console logs (F12).</p>
+                </div>`;
+        }
+
     } catch (err) {
         console.error("My Enrollments sync error:", err);
-        gridContainer.innerHTML = `<div class="catalog-loader" style="color:#ff6b6b;">⚠️ Sync Error: ${err.message}</div>`;
+        // Instead of staying frozen, display the exact database error on screen!
+        gridContainer.innerHTML = `
+            <div class="catalog-loader" style="color:#ff6b6b; padding: 2rem;">
+                <h3>⚠️ Synchronizing Failure</h3>
+                <p>${err.message || 'Unknown database retrieval problem'}</p>
+            </div>`;
     }
 }
 

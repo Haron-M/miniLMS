@@ -3,7 +3,7 @@ const userProfile = {
     name: "Haron",
     role: "Computer Science - Year 2"
 };
-// 1. Your familiar, simple page loader function
+// Updated Page Loader with your exact filenames
 async function loadPage(page) {
     try {
         const response = await fetch(page);
@@ -11,13 +11,20 @@ async function loadPage(page) {
         const mainContent = document.getElementById("main-content");
 
         if (mainContent) {
+            // 1. Inject the HTML into the page first
             mainContent.innerHTML = data;
-        }
-        else if (page === 'courses.html') {
-            synchronizePortalCatalog();
-        }
-        else if (page === 'enrollment.html') {
-            synchronizeMyEnrollments(); // Triggers the fresh list pull immediately
+
+            // 2. Trigger the correct database sync functions based on your filenames
+            if (page === 'courses.html') {
+                console.log("⚡ Router Active: Running Courses Catalog Sync...");
+                synchronizePortalCatalog();
+            }
+            else if (page === 'enrollment.html') {
+                console.log("⚡ Router Active: Running Enrollments Sync...");
+                synchronizeMyEnrollments();
+            }
+        } else {
+            console.error("❌ Error: Target element '#main-content' was not found in the DOM.");
         }
     } catch (error) {
         console.error("Error loading the page:", error);
@@ -80,33 +87,22 @@ window.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('dynamic-greeting').innerText = `${greetingStr}, ${userProfile.name}!`;
 });
-// Append directly inside your dashboard.js file
 async function synchronizeMyEnrollments() {
     const gridContainer = document.getElementById('my-enrollments-grid');
     if (!gridContainer) return;
 
     try {
-        // 1. Fetch data from enrollments and try to pull the linked course data
-        const { data: records, error } = await _supabase
+        // Step 1: Fetch raw enrollment entries for the active session
+        const { data: enrollmentRecords, error: enrollmentError } = await _supabase
             .from('enrollments')
-            .select(`
-                id,
-                courses (
-                    id,
-                    course_code,
-                    course_name,
-                    lecturer,
-                    year_taught
-                )
-            `);
+            .select('id, course_id');
 
-        if (error) throw error;
+        if (enrollmentError) throw enrollmentError;
 
-        // Debugging: This prints the exact structure to your console so you can see it
-        console.log("Supabase Enrollments Payload:", records);
+        console.log("Step 1 - Raw Enrollments from DB:", enrollmentRecords);
 
-        // 2. Check if the user has any enrollments
-        if (!records || records.length === 0) {
+        // If no enrollments exist in the table, stop here
+        if (!enrollmentRecords || enrollmentRecords.length === 0) {
             gridContainer.innerHTML = `
                 <div class="catalog-loader">
                     <h3>🎓 No active enrollments found</h3>
@@ -115,67 +111,66 @@ async function synchronizeMyEnrollments() {
             return;
         }
 
-        gridContainer.innerHTML = ''; // Wipe out the frozen loading text
+        // Extract just the course IDs into a clean flat array list
+        const courseIdsList = enrollmentRecords.map(item => item.course_id);
+        console.log("Step 2 - Target Course IDs extracted:", courseIdsList);
 
-        // 3. Loop through your records with safety checks
-        records.forEach(item => {
-            // SAFETY FALLBACK: Handles both singular 'course' or plural 'courses' matching shapes
-            const course = item.courses || item.course;
+        // Step 2: Pull the full details for all those courses in a single query
+        const { data: linkedCourses, error: coursesError } = await _supabase
+            .from('courses')
+            .select('*')
+            .in('id', courseIdsList); // Looks for all matches contained inside our array
 
-            if (!course) {
-                console.warn("Found an enrollment record, but it has no matching course data linked to it:", item);
-                return; // Skip this item safely if data mapping is loose
-            }
+        if (coursesError) throw coursesError;
+
+        console.log("Step 3 - Final Joined Course Objects:", linkedCourses);
+
+        gridContainer.innerHTML = ''; // Clear out "Synchronizing your active syllabus..."
+
+        // Step 3: Render the cards onto your layout view panel
+        linkedCourses.forEach(course => {
+            // Find the matching enrollment record ID to assign to the drop button
+            const enrollmentEntry = enrollmentRecords.find(e => e.course_id === course.id);
+            const enrollmentId = enrollmentEntry ? enrollmentEntry.id : '';
 
             const structuralImageCover = `https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80&sig=${course.course_code}`;
-
+            // Ensure this specific loop chunk is used to build the cards inside synchronizeMyEnrollments
             const cardNodeMarkup = `
-                <div class="course-card-node">
-                    <div class="card-image-canvas">
-                        <span class="card-academic-badge">${course.year_taught || 'Core'}</span>
-                        <img src="${structuralImageCover}" alt="${course.course_name} Cover">
-                    </div>
-                    
-                    <div class="card-details-context">
-                        <span class="card-course-code">🆔 ${course.course_code}</span>
-                        <h3 class="card-course-title">${course.course_name}</h3>
-                        
-                        <div class="card-lecturer-row">
-                            <span>👨‍🏫</span>
-                            <span>${course.lecturer}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="card-action-bar">
-                        <button class="btn-card-enroll" style="background:#ff4d4d; color:#ffffff;" onclick="cancelEnrollment('${item.id}')">
-                            ❌ Drop Course
-                        </button>
-                    </div>
-                </div>
-            `;
+    <div class="course-card-node">
+        <div class="card-image-canvas">
+            <span class="card-academic-badge">${course.year_taught || 'Core'}</span>
+            <img src="${structuralImageCover}" alt="${course.course_name} Cover">
+        </div>
+        
+        <div class="card-details-context">
+            <span class="card-course-code">🆔 ${course.course_code}</span>
+            <h3 class="card-course-title">${course.course_name}</h3>
+            
+            <div class="card-lecturer-row">
+                <span>👨‍🏫</span>
+                <span>${course.lecturer}</span>
+            </div>
+        </div>
+        
+        <div class="card-action-bar">
+            <button class="btn-card-drop" onclick="cancelEnrollment('${enrollmentId}')">
+                ❌ Unenrol me
+            </button>
+        </div>
+    </div>
+`;
             gridContainer.insertAdjacentHTML('beforeend', cardNodeMarkup);
-        });
-
-        // Final safety: If records existed but all failed the relationship check
-        if (gridContainer.innerHTML === '') {
-            gridContainer.innerHTML = `
-                <div class="catalog-loader">
-                    <h3>⚠️ Relationship Mapping Issue</h3>
-                    <p>The system found your enrollment rows but couldn't map them to the courses table items. Check your console logs (F12).</p>
-                </div>`;
-        }
+        })
 
     } catch (err) {
-        console.error("My Enrollments sync error:", err);
-        // Instead of staying frozen, display the exact database error on screen!
+        console.error("Enrollment structural loading failure:", err);
         gridContainer.innerHTML = `
             <div class="catalog-loader" style="color:#ff6b6b; padding: 2rem;">
-                <h3>⚠️ Synchronizing Failure</h3>
-                <p>${err.message || 'Unknown database retrieval problem'}</p>
+                <h3>⚠️ Synchronization Blocked</h3>
+                <p>${err.message || 'Check database table configurations.'}</p>
             </div>`;
     }
 }
-
 // Optional: Allows a student to drop a course from their dashboard page
 async function cancelEnrollment(enrollmentId) {
     if (!confirm("Are you sure you want to drop this course module?")) return;

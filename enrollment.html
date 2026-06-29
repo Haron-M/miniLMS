@@ -1,23 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>enrollments</title>
+    <style>
+        /* Core Cards Grid Layout */
+        .course-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 1rem 0;
+            width: 100%;
+        }
+
+        /* Individual Card Sizing Layouts */
+        .course-card-node {
+            background: #ffffff;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid rgba(2, 14, 46, 0.08);
+        }
+
+        .course-card-node:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(2, 14, 46, 0.1);
+        }
+
+        /* Card Image Sizing Frame (Prevents giant images like in image_cb219c.png) */
+        .card-image-canvas {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            /* Locked height */
+            overflow: hidden;
+        }
+
+        .card-image-canvas img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* Crops image cleanly inside the frame */
+        }
+
+        /* Academic Badge Positioning */
+        .card-academic-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(2, 14, 46, 0.6);
+            backdrop-filter: blur(4px);
+            color: #ffffff;
+            padding: 0.35rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Details Padding Block */
+        .card-details-context {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex-grow: 1;
+        }
+
+        .card-course-code {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #f5c340;
+            /* Accent gold color */
+            text-transform: uppercase;
+        }
+
+        .card-course-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #020e2e;
+            margin: 0;
+        }
+
+        .card-lecturer-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #555555;
+            margin-top: 0.5rem;
+        }
+
+        /* Action Bar Button Style */
+        .card-action-bar {
+            padding: 0 1.5rem 1.5rem 1.5rem;
+        }
+
+        .btn-card-drop {
+            width: 100%;
+            padding: 0.8rem;
+            background: #ff4d4d;
+            color: #ffffff;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: background 0.2s ease;
+        }
+
+        .btn-card-drop:hover {
+            background: #e03e3e;
+        }
+    </style>
 </head>
+
 <body>
     <!-- MY ENROLLMENTS VIEW CONTAINER -->
-<div class="catalog-workspace">
-    <div class="panel-header-block">
-        <h2 class="panel-title-text">🎓 My Active Enrollments</h2>
-        <p class="panel-subtitle-text">Track your synchronized learning tracks and course timelines here.</p>
+    <div class="catalog-workspace">
+        <div class="panel-header-block">
+            <h2 class="panel-title-text">🎓 My Active Enrollments</h2>
+            <p class="panel-subtitle-text">Track your synchronized learning tracks and course timelines here.</p>
+        </div>
+
+        <!-- The enrolled cards mount directly here -->
+        <div id="my-enrollments-grid" class="course-cards-grid">
+            <div class="catalog-loader">Synchronizing your active syllabus...</div>
+        </div>
     </div>
 
-    <!-- The enrolled cards mount directly here -->
-    <div id="my-enrollments-grid" class="course-cards-grid">
-        <div class="catalog-loader">Synchronizing your active syllabus...</div>
-    </div>
-</div>
-    
 </body>
+
 </html>
